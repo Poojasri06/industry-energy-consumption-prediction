@@ -1,0 +1,64 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+def load_data(use_excel=False, file_path=None):
+    """Loads the dataset either from an Excel file or uses a built-in dataset with monthly data."""
+    if use_excel and file_path:
+        df = pd.read_excel(file_path)
+    else:
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        years = list(range(2012, 2024))
+        np.random.seed(42)
+        data = {"Year": [], "Month": [], "Energy_Consumption_kW": []}
+        for year in years:
+            for month in months:
+                consumption = np.random.randint(300, 700)
+                data["Year"].append(year)
+                data["Month"].append(month)
+                data["Energy_Consumption_kW"].append(consumption)
+        df = pd.DataFrame(data)
+    return df
+
+def train_model(df):
+    """Trains a linear regression model on the dataset."""
+    df["Year_Month"] = df["Year"] + df["Month"].astype("category").cat.codes / 12.0
+    X = df["Year_Month"].values.reshape(-1, 1)
+    y = df["Energy_Consumption_kW"].values
+    model = LinearRegression()
+    model.fit(X, y)
+    return model
+
+def predict_future(model, years_months):
+    """Predicts future energy consumption for given years and months."""
+    X_new = np.array(years_months).reshape(-1, 1)
+    predictions = model.predict(X_new)
+    return predictions
+
+def plot_results(df, model):
+    """Plots the historical data and predictions."""
+    df["Year_Month"] = df["Year"] + df["Month"].astype("category").cat.codes / 12.0
+    plt.scatter(df["Year_Month"], df["Energy_Consumption_kW"], color="blue", label="Actual Data")
+    future_months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    future_years_months = [2024 + i / 12.0 for i in range(len(future_months) * 3)]
+    predictions = predict_future(model, future_years_months)
+    plt.plot(future_years_months, predictions, color="red", linestyle="dashed", label="Predictions")
+    plt.xlabel("Year and Month")
+    plt.ylabel("Energy Consumption (kW)")
+    plt.legend()
+    plt.show()
+
+def main():
+    file_path = "copy of Generated_energy_data(1).xls"  # Change this to actual path if using an Excel file
+    df = load_data(use_excel=False, file_path=file_path)
+    model = train_model(df)
+    future_months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    future_years_months = [2024 + i / 12.0 for i in range(len(future_months) * 3)]
+    predictions = predict_future(model, future_years_months)
+    for year_month, pred in zip(future_years_months, predictions):
+        print(f"Year-Month: {year_month:.2f}, Predicted Consumption: {pred:.2f} kW")
+    plot_results(df, model)
+
+if _name_ == "_main_":
+    main()
